@@ -133,6 +133,21 @@ class _LoginState extends State<Login> {
   //   }
   // }
 
+// gettoken()async{
+//   final result = await FlutterWebAuth.authenticate(
+//     url:
+//         "",
+//     callbackUrlScheme: "",
+//   );
+
+//   final token = Uri.parse(result);
+//   String at = token.fragment;
+//   at = "서버주소/login/oauth2/code/google$at";
+//   var accesstoken = Uri.parse(at).queryParameters['access_token'];
+//   print('token');
+//   print(accesstoken);
+// }
+  
   @override
   Widget build(BuildContext context) {
     final mq = MediaQuery.of(context).size;
