@@ -111,35 +111,3 @@ class _LoginState extends State<Login> {
 
 
 
-
-
-
-
-
-
-
-
-
-  
-  final Uri _url = Uri.parse(
-      'http://ec2-15-164-7-100.ap-northeast-2.compute.amazonaws.com:8080/oauth2/authorization/google');
-
-  // ignore: unused_element
-  Future<void> _launchUrl2() async {
-    var response = await http.get(_url);
-
-    if (!await launchUrl(_url, mode: LaunchMode.inAppWebView)) {
-      throw Exception('Could not launch $_url');
-    }
-    print('응답코드 : ${response.statusCode}');
-
-    if (response.statusCode == 200) {
-      print('응답코드 : ok');
-    } else if (response.statusCode == 404) {
-      print('응답코드 : not');
-    } else if (response.statusCode == 500) {
-      print('응답코드 : no');
-    }
-  }
-
-}
