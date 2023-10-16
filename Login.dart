@@ -11,11 +11,10 @@ class Login extends StatefulWidget {
 }
 
 class _LoginState extends State<Login> {
-  final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email']);
+  final GoogleSignIn googleSignIn = GoogleSignIn(scopes: ['email']);
   bool isLoggedIn = false;
   String jwtToken = '';
   String email = '';
-  String header = '';
   
   @override
   Widget build(BuildContext context) {
@@ -40,7 +39,7 @@ class _LoginState extends State<Login> {
                 width: mq.width / 1.2,
                 child: TextButton(
                     onPressed: () {
-                         signIn(); 
+                         getJwtToken(); 
                     },
                     style: TextButton.styleFrom(
                         elevation: 1.0,
@@ -82,30 +81,32 @@ class _LoginState extends State<Login> {
         )));
   }
 
-Future<void> signIn() async {
+  Future<void> signIn(String jwt) async {
     try {
-      await _googleSignIn.signIn();
-      final user = _googleSignIn.currentUser;
+      await googleSignIn.signIn();
+      final user = googleSignIn.currentUser;
+      // final token = await googleSignIn.currentUser!.authentication;
       if (user != null) {
         setState(() {
           isLoggedIn = true;
-          jwtToken = user.id;
-           email = user.email;
+          jwtToken = jwt;
+          email = user.email;
         });
         sendToken(jwtToken, email);
       }
     } catch (error) {
-      print('로그인 실패: $error');
+      print('Google 로그인 실패: $error');
     }
   }
 
-  Future<void> sendToken(String idToken, String email) async {
+    Future<void> sendToken(String idToken, String email) async {
     try {
       final serverUrl = Uri.parse(
           'http://ec2-15-164-7-100.ap-northeast-2.compute.amazonaws.com:8080/oauth2/authorization/google');
       final response = await http.post(serverUrl, headers: {
         'Authorization': 'Bearer $idToken',
       });
+
       if (response.statusCode == 200) {
         print('서버 응답: ${response.body}');
       } else {
@@ -115,6 +116,19 @@ Future<void> signIn() async {
       print('서버 요청 실패: $error');
     }
   }
+
+  
+Future<String?> getJwtToken() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      IdTokenResult tokenResult = await user.getIdTokenResult();
+
+      signIn(tokenResult.token.toString());
+    }
+    return null;
+  }
+
+
 }
 
 
