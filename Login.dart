@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
@@ -10,7 +11,11 @@ class Login extends StatefulWidget {
 }
 
 class _LoginState extends State<Login> {
-
+  final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email']);
+  bool isLoggedIn = false;
+  String jwtToken = '';
+  String email = '';
+  String header = '';
   
   @override
   Widget build(BuildContext context) {
@@ -35,7 +40,7 @@ class _LoginState extends State<Login> {
                 width: mq.width / 1.2,
                 child: TextButton(
                     onPressed: () {
-                         loginWithGoogleAndToken(); 
+                         signIn(); 
                     },
                     style: TextButton.styleFrom(
                         elevation: 1.0,
@@ -77,36 +82,40 @@ class _LoginState extends State<Login> {
         )));
   }
 
-  Future<void> loginWithGoogleAndToken() async {
+Future<void> signIn() async {
     try {
-      final GoogleSignInAccount? googleSignInAccount =
-          await GoogleSignIn(scopes: ['email']).signIn();
-      if (googleSignInAccount != null) {
-        
-        final GoogleSignInAuthentication googleSignInAuthentication =
-            await googleSignInAccount.authentication;
-        final String? accessToken = googleSignInAuthentication.accessToken;
-        final email = googleSignInAccount.email;
-
-        final response = await http.post(
-          Uri.parse(
-              'http://ec2-15-164-7-100.ap-northeast-2.compute.amazonaws.com:8080/oauth2/authorization/google'),
-          headers: {
-            'Authorization': '$accessToken',
-          },
-          body: jsonEncode({'access_token': accessToken, 'email': email}),
-        );
-        if (response.statusCode == 200) {
-          final responseBody = response.body;
-          print('요청 성공: $responseBody');
-        } else {
-          print('응답코드: ${response.statusCode}');
-        }
+      await _googleSignIn.signIn();
+      final user = _googleSignIn.currentUser;
+      if (user != null) {
+        setState(() {
+          isLoggedIn = true;
+          jwtToken = user.id;
+           email = user.email;
+        });
+        sendToken(jwtToken, email);
       }
     } catch (error) {
-      print('구글 로그인 에러: $error');
+      print('로그인 실패: $error');
     }
   }
+
+  Future<void> sendToken(String idToken, String email) async {
+    try {
+      final serverUrl = Uri.parse(
+          'http://ec2-15-164-7-100.ap-northeast-2.compute.amazonaws.com:8080/oauth2/authorization/google');
+      final response = await http.post(serverUrl, headers: {
+        'Authorization': 'Bearer $idToken',
+      });
+      if (response.statusCode == 200) {
+        print('서버 응답: ${response.body}');
+      } else {
+        print('서버 응답 실패: ${response.statusCode}');
+      }
+    } catch (error) {
+      print('서버 요청 실패: $error');
+    }
+  }
+}
 
 
 
